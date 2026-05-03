@@ -78,7 +78,7 @@ class Source:
             )
 
             if not sid_match or not uri_match:
-                raise Exception(
+                raise ValueError(
                     "Handshake failed: Could not find auth-session or publish-uri."
                 )
 
@@ -113,7 +113,12 @@ class Source:
                             lookup_id = field.get("props", {}).get("lookup")
                             break
                 lookup_id = lookup_id or FALLBACK_LOOKUP
-            except Exception:
+            except (
+                requests.RequestException,
+                ValueError,
+                KeyError,
+                json.JSONDecodeError,
+            ):
                 form_id, stage_id, lookup_id = (
                     FALLBACK_FORM,
                     FALLBACK_STAGE,
@@ -166,7 +171,7 @@ class Source:
         # 5: Parsing response, handling end of year-wrap if necessary
         integration = data.get("integration", {}).get("transformed", {})
         if integration.get("error"):
-            raise Exception(f"Council API Error: {integration.get('error')}")
+            raise ValueError(f"Council API Error: {integration.get('error')}")
 
         rows_data = integration.get("rows_data", {})
         rows = rows_data.values() if isinstance(rows_data, dict) else rows_data
